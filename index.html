@@ -132,9 +132,103 @@
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
+  /* password gate */
+  .gate {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeUp 1s ease both;
+  }
+  .gate .bg, .gate .overlay { position: absolute; inset: 0; }
+  .gate-inner {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+  }
+  .gate-label {
+    font-family: 'Jost', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 400;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: rgba(253, 252, 249, 0.72);
+    margin-bottom: 1.6rem;
+  }
+  .gate-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(253, 252, 249, 0.35);
+    color: #fdfcf9;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.14em;
+    text-align: center;
+    padding: 0.5rem 0.4rem;
+    width: min(260px, 70vw);
+    outline: none;
+  }
+  .gate-input::placeholder {
+    color: rgba(253, 252, 249, 0.4);
+    letter-spacing: 0.14em;
+  }
+  .gate-btn {
+    margin-top: 1.6rem;
+    background: transparent;
+    border: 1px solid rgba(253, 252, 249, 0.45);
+    color: #fdfcf9;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    padding: 0.7rem 1.8rem;
+    cursor: pointer;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+  .gate-btn:hover, .gate-btn:focus-visible {
+    background: rgba(253, 252, 249, 0.9);
+    color: #0f110d;
+  }
+  .gate-error {
+    font-family: 'Jost', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(220, 150, 150, 0.9);
+    margin-top: 1.2rem;
+    min-height: 0.8rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .gate-error.show { opacity: 1; }
+
+  .page { visibility: hidden; }
+  body.unlocked .page { visibility: visible; }
+  body.unlocked .gate { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .content, .gate { animation: none; }
+  }
 </style>
 </head>
 <body>
+<div class="gate" id="gate">
+  <div class="bg"></div>
+  <div class="overlay"></div>
+  <div class="gate-inner">
+    <p class="gate-label">Please enter the password</p>
+    <input class="gate-input" id="pw" type="password" placeholder="Password" autocomplete="off" autofocus>
+    <button class="gate-btn" id="enter">Enter</button>
+    <p class="gate-error" id="err">Incorrect password</p>
+  </div>
+</div>
 <div class="page">
   <div class="bg"></div>
   <div class="overlay"></div>
@@ -153,5 +247,45 @@
     </p>
   </div>
 </div>
+<script>
+  (function () {
+    var PASSWORD = "Rokbey2027";
+    var KEY = "am_unlocked=1";
+    var gate = document.getElementById("gate");
+    var input = document.getElementById("pw");
+    var btn = document.getElementById("enter");
+    var err = document.getElementById("err");
+
+    function unlock() {
+      document.body.classList.add("unlocked");
+    }
+
+    // returning visitor?
+    if (document.cookie.indexOf(KEY) !== -1) {
+      unlock();
+      return;
+    }
+
+    function attempt() {
+      if (input.value === PASSWORD) {
+        // remember for ~180 days
+        document.cookie = KEY + "; max-age=" + (60 * 60 * 24 * 180) + "; path=/; SameSite=Lax";
+        unlock();
+      } else {
+        err.classList.add("show");
+        input.value = "";
+        input.focus();
+      }
+    }
+
+    btn.addEventListener("click", attempt);
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") attempt();
+    });
+    input.addEventListener("input", function () {
+      err.classList.remove("show");
+    });
+  })();
+</script>
 </body>
 </html>
